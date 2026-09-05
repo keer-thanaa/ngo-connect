@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — NGO Connect</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-card">
+    <h1>Register</h1>
+    <p class="sub">Your account is reviewed manually before it's approved. This usually takes a day or two.</p>
+
+    <div id="alertBox"></div>
+
+    <form id="signupForm" novalidate>
+      <div class="role-toggle">
+        <label>
+          <input type="radio" name="role" value="institution" checked>
+          <span>Care institution</span>
+        </label>
+        <label>
+          <input type="radio" name="role" value="ngo">
+          <span>NGO</span>
+        </label>
+      </div>
+
+      <div class="field" id="instTypeField">
+        <label for="institution_type">Institution type</label>
+        <select id="institution_type" name="institution_type">
+          <option value="orphanage">Orphanage</option>
+          <option value="old_age_home">Old age home</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required maxlength="150" placeholder="e.g. Sunrise Old Age Home">
+      </div>
+
+      <div class="field">
+        <label for="location">Location (city / area)</label>
+        <input type="text" id="location" name="location" required maxlength="150" placeholder="e.g. Chennai">
+      </div>
+
+      <div class="field">
+        <label for="description">Short description</label>
+        <textarea id="description" name="description" maxlength="500" placeholder="What you do, who you serve, roughly how many people."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="contact_email">Contact email</label>
+        <input type="email" id="contact_email" name="contact_email" required maxlength="150">
+      </div>
+
+      <div class="field">
+        <label for="contact_phone">Contact phone (optional)</label>
+        <input type="tel" id="contact_phone" name="contact_phone" maxlength="30">
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="8" placeholder="At least 8 characters">
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit" id="submitBtn">Create account</button>
+    </form>
+
+    <p class="form-note">Already registered? <a href="login.html">Log in</a></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script type="module">
+  import { supabase } from './js/supabaseClient.js';
+  import { cleanText, isValidEmail } from './js/auth.js';
+
+  const params = new URLSearchParams(window.location.search);
+  const preselect = params.get('role');
+  if (preselect === 'ngo' || preselect === 'institution') {
+    document.querySelector(`input[name="role"][value="${preselect}"]`).checked = true;
+  }
+
+  const form = document.getElementById('signupForm');
+  const alertBox = document.getElementById('alertBox');
+  const instTypeField = document.getElementById('instTypeField');
+  const submitBtn = document.getElementById('submitBtn');
+
+  function syncInstTypeVisibility() {
+    const role = form.role.value;
+    instTypeField.style.display = role === 'institution' ? 'block' : 'none';
+  }
+  form.querySelectorAll('input[name="role"]').forEach(r => r.addEventListener('change', syncInstTypeVisibility));
+  syncInstTypeVisibility();
+
+  function showAlert(message, type = 'error') {
+    alertBox.innerHTML = `<div class="alert alert-${type === 'error' ? 'error' : 'ok'}">${message}</div>`;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    alertBox.innerHTML = '';
+
+    const role = form.role.value;
+    const name = cleanText(form.name.value, 150);
+    const location = cleanText(form.location.value, 150);
+    const description = cleanText(form.description.value, 500);
+    const contact_email = cleanText(form.contact_email.value, 150);
+    const contact_phone = cleanText(form.contact_phone.value, 30);
+    const password = form.password.value;
+    const institution_type = role === 'institution' ? form.institution_type.value : null;
+
+    if (!name || !location || !contact_email) {
+      showAlert('Please fill in name, location, and contact email.');
+      return;
+    }
+    if (!isValidEmail(contact_email)) {
+      showAlert('Please enter a valid contact email.');
+      return;
+    }
+    if (password.length < 8) {
+      showAlert('Password must be at least 8 characters.');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account…';
+
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: contact_email,
+      password
+    });
+
+    if (signUpError) {
+      showAlert(signUpError.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create account';
+      return;
+    }
+
+    const userId = signUpData.user?.id;
+    if (!userId) {
+      showAlert('Account created — please check your email to confirm, then log in.', 'ok');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create account';
+      return;
+    }
+
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: userId,
+      role,
+      name,
+      institution_type,
+      location,
+      contact_email,
+      contact_phone: contact_phone || null,
+      description: description || null
+    });
+
+    if (profileError) {
+      showAlert('Account created but profile setup failed: ' + profileError.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create account';
+      return;
+    }
+
+    window.location.href = 'dashboard.html';
+  });
+</script>
+</body>
+</html>

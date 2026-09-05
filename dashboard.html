@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — NGO Connect</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="index.html"><span class="pin-dot"></span> NGO Connect</a>
+    <nav class="site-nav">
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">Log out</button>
+    </nav>
+  </header>
+
+  <div class="dash-header">
+    <h1 id="dashTitle">Board</h1>
+    <span class="badge-role" id="roleBadge"></span>
+  </div>
+
+  <div id="pendingNote" class="pending-note" style="display:none;"></div>
+
+  <div id="alertBox"></div>
+
+  <!-- Institution: post a new requirement -->
+  <div id="composeSection" class="compose" style="display:none;">
+    <h2>Post a requirement</h2>
+    <form id="composeForm" novalidate>
+      <div class="field">
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+          <option value="medical">Medical</option>
+          <option value="food">Food</option>
+          <option value="clothing">Clothing</option>
+          <option value="volunteers">Volunteers</option>
+          <option value="funds">Funds</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="reqDescription">What's needed</label>
+        <textarea id="reqDescription" name="reqDescription" required maxlength="400" placeholder="e.g. 10 blankets for winter, or 2 volunteers for Saturday reading hour"></textarea>
+      </div>
+      <button class="btn btn-primary" type="submit" id="composeBtn">Post to board</button>
+    </form>
+  </div>
+
+  <!-- NGO: filters -->
+  <div id="filterSection" class="compose" style="display:none;">
+    <h2>Find a need</h2>
+    <div class="field">
+      <label for="filterCategory">Category</label>
+      <select id="filterCategory">
+        <option value="">All categories</option>
+        <option value="medical">Medical</option>
+        <option value="food">Food</option>
+        <option value="clothing">Clothing</option>
+        <option value="volunteers">Volunteers</option>
+        <option value="funds">Funds</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="board" class="board"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
