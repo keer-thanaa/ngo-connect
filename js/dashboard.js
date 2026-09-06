@@ -101,7 +101,7 @@ async function loadBoard() {
 
   let query = supabase
     .from('requirements')
-    .select('*, profiles:institution_id(name, location, institution_type)')
+    .select('*, institution:institution_id(name, location, institution_type, contact_email, contact_phone), claimer:claimed_by(name, contact_email, contact_phone)')
     .order('created_at', { ascending: false });
 
   if (currentProfile.role === 'institution') {
@@ -145,19 +145,47 @@ function renderBoard(items) {
   });
 }
 
+function contactLine(person) {
+  if (!person) return '';
+  const bits = [];
+  if (person.contact_email) bits.push(escapeHtml(person.contact_email));
+  if (person.contact_phone) bits.push(escapeHtml(person.contact_phone));
+  if (bits.length === 0) return '';
+  return `<div class="contact-line">📩 ${bits.join(' · ')}</div>`;
+}
+
 function cardHtml(item) {
-  const inst = item.profiles || {};
+  const inst = item.institution || {};
+  const claimer = item.claimer || null;
   const stampClass = `stamp-${item.status}`;
   const stampLabel = STAMP_LABEL[item.status] || item.status;
 
   let actions = '';
-  if (currentProfile.role === 'ngo' && item.status === 'pending') {
-    actions = currentProfile.approved
-      ? `<div class="actions"><button class="btn btn-primary btn-sm" data-claim-id="${item.id}">Claim this</button></div>`
-      : `<div class="actions"><span style="font-size:13px;color:var(--ink-soft)">Approval pending — you'll be able to claim once approved</span></div>`;
+  let contactBlock = '';
+
+  if (currentProfile.role === 'ngo') {
+    if (item.status === 'pending') {
+      actions = currentProfile.approved
+        ? `<div class="actions"><button class="btn btn-primary btn-sm" data-claim-id="${item.id}">Claim this</button></div>`
+        : `<div class="actions"><span style="font-size:13px;color:var(--ink-soft)">Approval pending — you'll be able to claim once approved</span></div>`;
+    }
+    // Approved NGOs can see institution contact info regardless of
+    // claim status — the database policy already gates this (an
+    // unapproved NGO simply won't have `inst` populated at all).
+    contactBlock = contactLine(inst);
   }
-  if (currentProfile.role === 'institution' && item.status !== 'done') {
-    actions = `<div class="actions"><button class="btn btn-ghost btn-sm" data-done-id="${item.id}">Mark done</button></div>`;
+
+  if (currentProfile.role === 'institution') {
+    if (item.status !== 'done') {
+      actions = `<div class="actions"><button class="btn btn-ghost btn-sm" data-done-id="${item.id}">Mark done</button></div>`;
+    }
+    // Show the claiming NGO's contact info once someone has claimed it,
+    // so the institution knows who to actually follow up with.
+    if (item.status === 'claimed' || item.status === 'done') {
+      contactBlock = claimer
+        ? `<div class="inst-name" style="margin-top:2px;">Claimed by ${escapeHtml(claimer.name || 'an NGO')}</div>${contactLine(claimer)}`
+        : '';
+    }
   }
 
   const subtitle = currentProfile.role === 'ngo'
@@ -173,6 +201,7 @@ function cardHtml(item) {
       </div>
       <p style="color: var(--ink); font-size:15px; margin:0 0 4px;">${escapeHtml(item.description)}</p>
       <div class="inst-name">${subtitle}</div>
+      ${contactBlock}
       ${actions}
     </div>`;
 }
