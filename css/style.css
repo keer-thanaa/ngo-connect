@@ -419,6 +419,7 @@ footer.site {
 .req-card .top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .req-card .inst-name { font-size: 13px; color: var(--ink-soft); }
 .req-card .actions { margin-top: 4px; display: flex; gap: 8px; }
+.req-card .contact-line { font-size: 13px; color: var(--ink-soft); word-break: break-word; }
 
 .empty-state {
   text-align: center;
