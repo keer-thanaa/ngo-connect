@@ -335,6 +335,29 @@ footer.site {
   border-color: var(--marigold);
 }
 
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 64px; }
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--dusty-blue);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+  min-height: 32px;
+}
+.password-toggle:hover { text-decoration: underline; }
+.password-toggle:focus-visible {
+  outline: 2px solid var(--marigold);
+  outline-offset: 1px;
+}
+
 .role-toggle {
   display: grid;
   grid-template-columns: 1fr 1fr;
